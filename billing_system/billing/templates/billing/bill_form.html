@@ -7,95 +7,150 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 20px;
-      background: #f9f9f9;
+      margin: 0;
+      background: #f4f6f8;
+      color: #333;
     }
-    h2 {
-      margin-bottom: 5px;
+    header {
+      background: #2b7cff;
+      color: #fff;
+      padding: 15px 20px;
     }
-    .row {
-      margin-bottom: 8px;
+    header h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+    main {
+      max-width: 900px;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px 25px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    h3 {
+      margin-top: 0;
+      border-bottom: 2px solid #f0f0f0;
+      padding-bottom: 5px;
+      color: #444;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 6px;
     }
     input, select {
-      padding: 6px;
+      padding: 8px;
       font-size: 14px;
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .flex-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
     }
     .product-row {
       display: flex;
-      gap: 8px;
-      margin-bottom: 6px;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .product-row input {
+      flex: 1;
     }
     .mini {
       width: 80px;
     }
     .btn {
-      padding: 8px 12px;
+      padding: 8px 14px;
       background: #2b7cff;
       color: #fff;
       border: none;
-      cursor: pointer;
       border-radius: 4px;
+      cursor: pointer;
       font-size: 14px;
     }
-    .btn.gray {
-      background: #777;
+    .btn.gray { background: #777; }
+    .btn.secondary { background: #28a745; }
+    .btn.remove {
+      background: #dc3545;
     }
-    .btn.secondary {
-      background: #28a745;
-    }
-    table {
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    table td, table th {
-      padding: 6px;
-      border: 1px solid #ddd;
+    .card {
+      background: #fafafa;
+      border: 1px solid #eee;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 20px;
     }
     #result {
       margin-top: 20px;
-      background: #fff;
+      background: #f8fff5;
       padding: 15px;
-      border: 1px solid #ddd;
+      border: 1px solid #c6e6c3;
       border-radius: 4px;
+    }
+    pre {
+      background: #f0f0f0;
+      padding: 8px;
+      border-radius: 4px;
+      font-size: 13px;
+      overflow-x: auto;
     }
   </style>
 </head>
 <body>
-  <h2>Create Bill</h2>
-  <p>Logged in as: {{ request.user.username }} — <a href="/admin/">Admin</a></p>
+  <header>
+    <h2>Create Bill</h2>
+    <small>Logged in as: {{ request.user.username }} — <a href="/admin/" style="color:#fff;text-decoration:underline;">Admin</a></small>
+  </header>
 
-  <!-- CSRF token for JS -->
-  {% csrf_token %}
-  <script>
-    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-  </script>
+  <main>
+    {% csrf_token %}
+    <script>
+      const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    </script>
 
-  <div class="row">
-    <label>Customer Email:
-      <input type="email" id="customer_email" required>
-    </label>
-    <button class="btn secondary" id="view_history">View Previous Purchases</button>
-  </div>
+    <div class="card">
+      <div class="form-group flex-row">
+        <div style="flex:1">
+          <label>Customer Email</label>
+          <input type="email" id="customer_email" placeholder="customer@example.com" required>
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button class="btn secondary" id="view_history" style="white-space:nowrap;">View History</button>
+        </div>
+      </div>
+    </div>
 
-  <h4>Products</h4>
-  <div id="products_container"></div>
-  <button class="btn" id="add_product">Add New Product</button>
+    <div class="card">
+      <h3>Products</h3>
+      <div id="products_container"></div>
+      <button class="btn" id="add_product" type="button">+ Add Product</button>
+    </div>
 
-  <h4>Shop Denominations (available counts)</h4>
-  <div id="denominations_container">Loading denominations...</div>
+    <div class="card">
+      <h3>Shop Denominations</h3>
+      <div id="denominations_container">Loading denominations...</div>
+    </div>
 
-  <div class="row">
-    <label>Paid Amount:
-      <input type="number" step="0.01" id="paid_amount">
-    </label>
-  </div>
+    <div class="card">
+      <div class="form-group">
+        <label>Paid Amount</label>
+        <input type="number" step="0.01" id="paid_amount" placeholder="0.00">
+      </div>
+      <div class="form-group flex-row">
+        <button class="btn" id="generate" type="button">Generate Bill</button>
+        <button class="btn gray" id="reset" type="button">Reset</button>
+      </div>
+    </div>
 
-  <div class="row">
-    <button class="btn" id="generate">Generate Bill</button>
-    <button class="btn gray" id="reset">Reset</button>
-  </div>
-
-  <div id="result"></div>
+    <div id="result"></div>
+  </main>
 
 <script>
 function makeProductRow(pid='', qty=1){
@@ -104,7 +159,7 @@ function makeProductRow(pid='', qty=1){
   div.innerHTML = `
     <input placeholder="Product ID" class="pid" value="${pid}">
     <input type="number" min="1" value="${qty}" class="qty mini">
-    <button class="btn remove">Remove</button>
+    <button class="btn remove" type="button">Remove</button>
   `;
   div.querySelector('.remove').addEventListener('click', ()=>div.remove());
   return div;
@@ -139,7 +194,11 @@ async function loadDenoms(){
   cont.innerHTML = '';
   denoms.forEach(d => {
     const el = document.createElement('div');
-    el.innerHTML = `<label>${d.value}: <input type="number" class="denom_count" data-value="${d.value}" value="${d.count_available}" min="0"></label>`;
+    el.className = 'form-group flex-row';
+    el.innerHTML = `
+      <label style="flex:1">${d.value}</label>
+      <input type="number" class="denom_count mini" data-value="${d.value}" value="${d.count_available}" min="0">
+    `;
     cont.appendChild(el);
   });
 }
@@ -148,7 +207,10 @@ document.getElementById('generate').addEventListener('click', async ()=>{
   const customer_email = document.getElementById('customer_email').value.trim();
   const paid_amount = document.getElementById('paid_amount').value || "0";
   const rows = Array.from(document.querySelectorAll('.product-row'));
-  const items = rows.map(r => ({ product_id: r.querySelector('.pid').value.trim(), quantity: r.querySelector('.qty').value }));
+  const items = rows.map(r => ({
+    product_id: r.querySelector('.pid').value.trim(),
+    quantity: r.querySelector('.qty').value
+  }));
 
   const payload = { customer_email, items, paid_amount };
 
@@ -166,9 +228,9 @@ document.getElementById('generate').addEventListener('click', async ()=>{
   if(res.status === 201){
     const data = await res.json();
     out.innerHTML = `<h3>Invoice Created: #${data.id}</h3>
-      <p>Total: ${data.total_amount} | Paid: ${data.paid_amount} | Change: ${data.change_amount}</p>
+      <p><strong>Total:</strong> ${data.total_amount} | <strong>Paid:</strong> ${data.paid_amount} | <strong>Change:</strong> ${data.change_amount}</p>
       <pre>${JSON.stringify(data.denominations_given, null, 2)}</pre>
-      <p><a href="/invoice/${data.id}/">View printable invoice</a></p>
+      <p><a href="/invoice/${data.id}/" class="btn">View Printable Invoice</a></p>
     `;
   } else {
     const err = await res.json();
