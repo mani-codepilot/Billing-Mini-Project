@@ -1,0 +1,39 @@
+# Ignore compiled Python files
+*.pyc
+
+# Ignore Python byte code cache
+__pycache__/
+
+# Ignore environment variables file
+.env
+
+# Ignore database file
+db.sqlite3
+
+db.sqlite3.sqbpro
+
+# Ignore static files directory
+/staticfiles/
+
+# Ignore media files directory
+/media/
+
+# Ignore Django migration files
+**/migrations/
+
+
+# Ignore IDE or editor-specific files
+.vscode/
+.idea/
+aws/
+*.sublime-project
+*.sublime-workspace
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+.word_files
+.flake8
+venv
+flake8-report
+static

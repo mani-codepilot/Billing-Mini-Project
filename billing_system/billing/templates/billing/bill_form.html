@@ -1,0 +1,185 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Billing - Create Invoice</title>
+  {% load static %}
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f9f9f9;
+    }
+    h2 {
+      margin-bottom: 5px;
+    }
+    .row {
+      margin-bottom: 8px;
+    }
+    input, select {
+      padding: 6px;
+      font-size: 14px;
+    }
+    .product-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .mini {
+      width: 80px;
+    }
+    .btn {
+      padding: 8px 12px;
+      background: #2b7cff;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .btn.gray {
+      background: #777;
+    }
+    .btn.secondary {
+      background: #28a745;
+    }
+    table {
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    table td, table th {
+      padding: 6px;
+      border: 1px solid #ddd;
+    }
+    #result {
+      margin-top: 20px;
+      background: #fff;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Create Bill</h2>
+  <p>Logged in as: {{ request.user.username }} — <a href="/admin/">Admin</a></p>
+
+  <!-- CSRF token for JS -->
+  {% csrf_token %}
+  <script>
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  </script>
+
+  <div class="row">
+    <label>Customer Email:
+      <input type="email" id="customer_email" required>
+    </label>
+    <button class="btn secondary" id="view_history">View Previous Purchases</button>
+  </div>
+
+  <h4>Products</h4>
+  <div id="products_container"></div>
+  <button class="btn" id="add_product">Add New Product</button>
+
+  <h4>Shop Denominations (available counts)</h4>
+  <div id="denominations_container">Loading denominations...</div>
+
+  <div class="row">
+    <label>Paid Amount:
+      <input type="number" step="0.01" id="paid_amount">
+    </label>
+  </div>
+
+  <div class="row">
+    <button class="btn" id="generate">Generate Bill</button>
+    <button class="btn gray" id="reset">Reset</button>
+  </div>
+
+  <div id="result"></div>
+
+<script>
+function makeProductRow(pid='', qty=1){
+  const div = document.createElement('div');
+  div.className = 'product-row';
+  div.innerHTML = `
+    <input placeholder="Product ID" class="pid" value="${pid}">
+    <input type="number" min="1" value="${qty}" class="qty mini">
+    <button class="btn remove">Remove</button>
+  `;
+  div.querySelector('.remove').addEventListener('click', ()=>div.remove());
+  return div;
+}
+
+document.getElementById('add_product').addEventListener('click', ()=>{
+  document.getElementById('products_container').appendChild(makeProductRow());
+});
+
+document.getElementById('reset').addEventListener('click', ()=>{
+  document.getElementById('customer_email').value='';
+  document.getElementById('products_container').innerHTML='';
+  document.getElementById('result').innerHTML='';
+  loadDenoms();
+});
+
+document.getElementById('view_history').addEventListener('click', ()=>{
+  const email = document.getElementById('customer_email').value.trim();
+  if(email){
+    window.location.href = `/previous-purchases/?email=${encodeURIComponent(email)}`;
+  } else {
+    alert('Please enter a customer email first.');
+  }
+});
+
+async function loadDenoms(){
+  const cont = document.getElementById('denominations_container');
+  cont.innerHTML = 'Loading...';
+  const res = await fetch('/api/denominations/', {credentials: 'same-origin'});
+  if(!res.ok){ cont.innerHTML = 'Please ensure you are logged-in and denominations exist.'; return; }
+  const denoms = await res.json();
+  cont.innerHTML = '';
+  denoms.forEach(d => {
+    const el = document.createElement('div');
+    el.innerHTML = `<label>${d.value}: <input type="number" class="denom_count" data-value="${d.value}" value="${d.count_available}" min="0"></label>`;
+    cont.appendChild(el);
+  });
+}
+
+document.getElementById('generate').addEventListener('click', async ()=>{
+  const customer_email = document.getElementById('customer_email').value.trim();
+  const paid_amount = document.getElementById('paid_amount').value || "0";
+  const rows = Array.from(document.querySelectorAll('.product-row'));
+  const items = rows.map(r => ({ product_id: r.querySelector('.pid').value.trim(), quantity: r.querySelector('.qty').value }));
+
+  const payload = { customer_email, items, paid_amount };
+
+  const res = await fetch('/api/create-invoice/', {
+    method: 'POST',
+    headers: {
+      'Content-Type':'application/json',
+      'X-CSRFToken': csrftoken
+    },
+    credentials: 'same-origin',
+    body: JSON.stringify(payload)
+  });
+
+  const out = document.getElementById('result');
+  if(res.status === 201){
+    const data = await res.json();
+    out.innerHTML = `<h3>Invoice Created: #${data.id}</h3>
+      <p>Total: ${data.total_amount} | Paid: ${data.paid_amount} | Change: ${data.change_amount}</p>
+      <pre>${JSON.stringify(data.denominations_given, null, 2)}</pre>
+      <p><a href="/invoice/${data.id}/">View printable invoice</a></p>
+    `;
+  } else {
+    const err = await res.json();
+    out.innerHTML = `<div style="color:red">${JSON.stringify(err)}</div>`;
+  }
+});
+
+window.addEventListener('load', ()=> {
+  document.getElementById('products_container').appendChild(makeProductRow());
+  loadDenoms();
+});
+</script>
+</body>
+</html>

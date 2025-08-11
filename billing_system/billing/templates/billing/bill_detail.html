@@ -1,0 +1,161 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Invoice #{{ invoice.id }}</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 30px;
+      background: #f9f9f9;
+      color: #333;
+    }
+    .invoice-box {
+      max-width: 800px;
+      margin: auto;
+      background: #fff;
+      padding: 20px 30px;
+      border: 1px solid #ddd;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    h1, h2, h3, h4 {
+      margin: 0;
+      padding: 0;
+    }
+    .invoice-header {
+      border-bottom: 2px solid #eee;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+    .invoice-header h2 {
+      font-size: 24px;
+      color: #444;
+    }
+    .invoice-meta {
+      margin-top: 5px;
+      font-size: 14px;
+      color: #777;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      margin-bottom: 20px;
+    }
+    table th {
+      background: #f0f0f0;
+      text-align: left;
+      padding: 8px;
+      border-bottom: 1px solid #ddd;
+    }
+    table td {
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+    }
+    .totals {
+      float: right;
+      width: 300px;
+      margin-top: 20px;
+    }
+    .totals table {
+      width: 100%;
+    }
+    .totals td {
+      padding: 6px 8px;
+    }
+    .totals tr:last-child td {
+      font-weight: bold;
+      font-size: 16px;
+      border-top: 2px solid #ddd;
+    }
+    .denoms {
+      margin-top: 20px;
+      font-size: 14px;
+      background: #f8f8f8;
+      padding: 10px;
+      border: 1px solid #ddd;
+    }
+    .btn-print {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 8px 14px;
+      background: #2b7cff;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 4px;
+    }
+    @media print {
+      .btn-print { display: none; }
+      body { background: #fff; margin: 0; }
+      .invoice-box { box-shadow: none; border: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="invoice-box">
+    <div class="invoice-header">
+      <h2>Invoice #{{ invoice.id }}</h2>
+      <div class="invoice-meta">
+        <div><strong>Customer:</strong> {{ invoice.customer_email }}</div>
+        <div><strong>Date:</strong> {{ invoice.created_at }}</div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Qty</th>
+          <th>Price</th>
+          <th>Tax</th>
+          <th>Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for it in invoice.items.all %}
+          <tr>
+            <td>{{ it.name }}</td>
+            <td>{{ it.quantity }}</td>
+            <td>{{ it.price }}</td>
+            <td>{{ it.tax_amount }}</td>
+            <td>{{ it.subtotal }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="totals">
+      <table>
+        <tr>
+          <td>Total (ex tax):</td>
+          <td style="text-align:right">{{ invoice.total_without_tax }}</td>
+        </tr>
+        <tr>
+          <td>Total tax:</td>
+          <td style="text-align:right">{{ invoice.total_tax }}</td>
+        </tr>
+        <tr>
+          <td>Total due:</td>
+          <td style="text-align:right">{{ invoice.total_amount }}</td>
+        </tr>
+        <tr>
+          <td>Paid:</td>
+          <td style="text-align:right">{{ invoice.paid_amount }}</td>
+        </tr>
+        <tr>
+          <td>Change:</td>
+          <td style="text-align:right">{{ invoice.change_amount }}</td>
+        </tr>
+      </table>
+    </div>
+    <div style="clear:both"></div>
+
+    <div class="denoms">
+      <strong>Denominations given:</strong>
+      <pre>{{ invoice.denominations_given }}</pre>
+    </div>
+
+    <a href="#" onclick="window.print()" class="btn-print">Print Invoice</a>
+  </div>
+</body>
+</html>
